@@ -31,6 +31,7 @@ function viewVariants(response){
    
     for(let repos of response.items){
         let elem = createElem('li','search-list__item', repos['name'])// Создаём элемент ли
+        elem.setAttribute('id',`${repos.id}`) // Добавляем элементу списка атрибут ID
         searchList.appendChild(elem) //добавляем элемент в Список
 
         repositaries.push(repos);//добавляем инфу о репозитарии в массив
@@ -47,13 +48,21 @@ function clearSearchList (){
 
 //Функция отправки запроса на GitHub
 async function searchRep(){
-    if(input.value) {
+    if(input.value && input.value[0] !== ' ') {
     return await fetch(`https://api.github.com/search/repositories?q=${input.value}&per_page=${perPage}`)
     .then( response => {
-        response.json().then(viewVariants) // Запускаем функцию показа вариантов
+          if(response.ok){ // Если статус успешный
+            response.json().then(viewVariants) // Запускаем функцию показа вариантов при статусе ОК
+          } else {
+            console.log(response.status);
+          }
+        }).catch((err)=>{
+            console.log(err);
         })
+
     } else {
         // Очищаем результаты поиска если поисковая строка пуста
+        input.value = '';
         clearSearchList();
     } 
 }
@@ -61,6 +70,7 @@ async function searchRep(){
 /*-----------------------Закрепление результатов---------------------------*/
 
 function selectRep(repos){
+    console.log(repos)
  let element = createElem('li','result-list__item');
  let elemInfo = createElem ('ul', 'element-info');
 
@@ -87,9 +97,8 @@ input.addEventListener('keyup', debounce(searchRep, 600));
 
 //Событие клик по найденному варианту
 searchField.addEventListener('click',(event)=>{
-
     for( let repos of repositaries){
-        if(event.target.textContent === repos['name']){
+        if(event.target.id == repos['id']){
             selectRep(repos); //добавляем розовую карточку с инфой о репозитарии
             input.value = ''; // очищаем строчку ввода
             clearSearchList(); // очищаем найденные варианты
@@ -99,8 +108,6 @@ searchField.addEventListener('click',(event)=>{
 
 //Зыкрытие розовой карточки с инфой о репозитарии
 resultList.addEventListener('click', function(event){
-    console.log(event.target);
-    console.log(event.target.parentElement);
     if(event.target.classList[0] === 'close-button') { //класс элемента равен close-button
         event.target.parentElement.remove() // удаляй элемент
     }
